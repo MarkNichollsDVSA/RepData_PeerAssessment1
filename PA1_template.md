@@ -21,12 +21,13 @@ data$date <- as.Date(data$date)
 
 
 ```r
+# Calculate the total number of steps taken per day
 library(dplyr)
 part_one <- data %>% 
   group_by(date) %>%
   summarise(total_steps = sum(steps))
 
-# create a histogram of the total number of steps taken each day
+# make a histogram of the total number of steps taken each day
 hist(part_one$total_steps, xlab = "", main = "Daily Steps")
 ```
 
@@ -99,32 +100,77 @@ sum(is.na(data$steps))
 ```r
 # Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-# I already have the interval averages calculated in part_tw0
-
+# I already have the interval averages calculated in part_two so i'm going to use those
+# make new dataset equal to original with NAs filled in
 part_three <- data %>%
   mutate(steps = ifelse(is.na(steps),
-                        part_two[which(part_two$interval == interval),2],
+                        part_two$ave_steps[part_two$interval %in% data$interval],
                         steps ))
+
+# make histogram of total number of steps each day
+part_three_plot_data <- part_three %>%
+  group_by(date) %>%
+  summarise(total_steps = sum(steps))
+
+hist(part_three_plot_data$total_steps,
+     xlab = "", 
+     main = "Daily Steps with NAs Imputed from Interval Mean")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
+```r
+# calculate and report the mean
+mean(part_three_plot_data$total_steps)
 ```
 
 ```
-## Warning: Problem with `mutate()` input `steps`.
-## i The `i` argument of ``[.tbl_df`()` must lie in [0, rows] if positive, as of tibble 3.0.0.
-## Use `NA_integer_` as row index to obtain a row full of `NA` values.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_warnings()` to see where this warning was generated.
-## i Input `steps` is `ifelse(...)`.
+## [1] 10766.19
+```
+
+```r
+# calculate and report on the median
+median(part_three_plot_data$total_steps)
 ```
 
 ```
-## Warning: The `i` argument of ``[.tbl_df`()` must lie in [0, rows] if positive, as of tibble 3.0.0.
-## Use `NA_integer_` as row index to obtain a row full of `NA` values.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_warnings()` to see where this warning was generated.
+## [1] 10766.19
 ```
+
+Imputing the NAs from the interval mean has no impact on the Mean steps per day, the impact of imputing the values from Interval Mean is that the median has increased and is now the same as the mean.  
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 
+```r
+# Use the dataset with the filled-in missing values for this part.
+
+#Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+
+part_three$wd_or_we <-  factor(
+  ifelse(
+    weekdays(data$date) %in% c("Saturday","Sunday"), 
+    "weekend", 
+    "weekday"
+  )
+)
+
+#Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+library(lattice)
+
+part_four <- part_three %>%
+  group_by(wd_or_we, interval) %>%
+  summarise(ave_steps = mean(steps))
+
+xyplot(ave_steps ~ interval | wd_or_we, data = part_four, 
+       type = "l", 
+       layout = c(1,2), 
+       main = "Average Steps per interval (NAs imputed from Interval Mean)", 
+       ylab = "Average Steps (Mean)"
+       )
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
